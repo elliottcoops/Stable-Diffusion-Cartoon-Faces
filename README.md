@@ -4,6 +4,8 @@
 
 This repository contains a Stable Diffusion model to generate synthetic images of cartoon faces from a given prompt, trained using Skiittoo/cartoon-faces from Hugging Face.
 
+![VAE reconstruction](images/generated_examples.png)
+
 ## What is stable diffusion?
 
 Stable Diffusion works by adding noise to a compressed image and then progressively denoising it with a UNet, guided by CLIP to align with the text prompt. Working directly in pixel space is computationally intensive (a 256x256x3 image contains over 196,000 pixels), so compression into a tighter latent space is preferred.
@@ -40,3 +42,8 @@ Training ran for 15 epochs using the Adam optimiser with a learning rate of 0.00
 A test prompt of "A cartoon face with facial hair and orange hair" is shown below.
 
 ![UNet denoising](images/example.png)
+
+## Inference
+
+During inference, a text prompt is first encoded into a text embedding using CLIP’s text encoder. A random noise latent tensor (matching the VAE latent space shape) is then progressively denoised by the UNet model over many diffusion steps, conditioned on the CLIP text embedding and the current timestep (via time embeddings). The UNet predicts the noise to remove at each step, gradually refining the latent towards a clean image representation. Finally, the VAE decoder transforms the denoised latent back into a full-resolution RGB image.
+
