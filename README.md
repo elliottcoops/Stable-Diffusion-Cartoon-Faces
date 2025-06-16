@@ -45,5 +45,7 @@ Training ran for 15 epochs using the Adam optimiser with a learning rate of 0.00
 
 ## Inference
 
-During inference, a text prompt is first encoded into a text embedding using CLIP’s text encoder. A random noise latent tensor (matching the VAE latent space shape) is then progressively denoised by the UNet model over many diffusion steps, conditioned on the CLIP text embedding and the current timestep (via time embeddings). The UNet predicts the noise to remove at each step, gradually refining the latent towards a clean image representation. Finally, the VAE decoder transforms the denoised latent back into a full-resolution RGB image.
+During inference, a text prompt is first encoded into a text embedding using CLIP’s text encoder. A random noise latent tensor (matching the VAE latent space shape) is then progressively denoised by the UNet model over many diffusion steps, conditioned on the CLIP text embedding and the current timestep (via time embeddings). The UNet predicts the noise to remove at each step, gradually refining the latent towards a clean image representation. Finally, the VAE decoder transforms the denoised latent back into a full-resolution RGB image. Generated results shown below look a little blurry but altogether very good!
+
+![image](images/stable_diffusion_diagram.jpg)
 
