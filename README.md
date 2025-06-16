@@ -14,7 +14,7 @@ More abstractly, the model has two main components:
 
 2. **UNet (Bottleneck)** - Denoises and generates details to produce the final image.
 
-![image](stable_diffusion_diagram.jpg)
+![image](images/stable_diffusion_diagram.jpg)
 
 ## Training
 
@@ -29,7 +29,7 @@ The VAE was trained to encode 64x64x3 images into a spatial latent representatio
 
 The VAE was then trained for 50 epochs using the Adam optimiser with a learning rate of 0.0001. Visual inspection of the results show strong results (although not perfect) in the diagram below.
 
-![VAE reconstruction](vae_recon_example.png)
+![VAE reconstruction](images/vae_recon_example.png)
 
 ### UNet training
 
@@ -39,4 +39,4 @@ Training ran for 15 epochs using the Adam optimiser with a learning rate of 0.00
 
 A test prompt of "A cartoon face with facial hair and orange hair" is shown below.
 
-![UNet denoising](example.png)
+![UNet denoising](images/example.png)
