@@ -35,30 +35,11 @@ The VAE was then trained for 50 epochs using the Adam optimiser with a learning 
 
 ### UNet training
 
-The UNet model was trained to operate on the \(4 \times 4 \times 4\) spatial latent representation produced by the VAE. It uses an encoder-decoder architecture with skip connections, progressively downsampling and upsampling spatial features. Convolutional layers are modulated by sinusoidal time embeddings \(\mathbf{t}_{emb}\) that condition the model on diffusion timesteps. CLIP text embeddings \(\mathbf{c}\) are incorporated for multimodal guidance, enabling the model to steer generation based on text prompts.
+The UNet model was trained to operate on the 4×4×4 spatial latent representation produced by the VAE. It uses an encoder-decoder architecture with skip connections, progressively downsampling and upsampling spatial features. Convolutional layers are modulated by sinusoidal time embeddings that condition the model on diffusion timesteps. CLIP text embeddings are incorporated for multimodal guidance, enabling the model to steer generation based on text prompts.
 
-The diffusion process employs a linear beta schedule \(\beta_t\) increasing from \(\beta_{\text{start}}\) to \(\beta_{\text{end}}\) over \(T\) timesteps:
-
-\[
-\beta_t = \text{linear}(\beta_{\text{start}}, \beta_{\text{end}}, t)
-\]
-
-The forward diffusion adds noise to the original latent \(\mathbf{x}_0\) at timestep \(t\) as:
-
-\[
-\mathbf{x}_t = \sqrt{\bar{\alpha}_t} \mathbf{x}_0 + \sqrt{1 - \bar{\alpha}_t} \boldsymbol{\epsilon}, \quad \boldsymbol{\epsilon} \sim \mathcal{N}(0, I)
-\]
-
-where \(\alpha_t = 1 - \beta_t\) and \(\bar{\alpha}_t = \prod_{s=1}^t \alpha_s\).
-
-The UNet model is trained to predict the noise \(\boldsymbol{\epsilon}\) given the noisy latent \(\mathbf{x}_t\), timestep embedding \(\mathbf{t}_{emb}\), and text conditioning \(\mathbf{c}\), optimising the mean squared error loss:
-
-\[
-\mathcal{L} = \mathbb{E}_{t, \mathbf{x}_0, \boldsymbol{\epsilon}} \left\| \boldsymbol{\epsilon} - \boldsymbol{\epsilon}_\theta(\mathbf{x}_t, t, \mathbf{c}) \right\|^2
-\]
+The diffusion process uses a linear beta schedule to gradually add noise to the latent representations over timesteps. During training, a forward diffusion function applies noise according to this schedule, blending the original latent with Gaussian noise to create progressively noisier inputs. The UNet is then trained to predict this noise, optimising the mean squared error between predicted and true noise.
 
 Training ran for 15 epochs using the Adam optimiser with a learning rate of 0.0002. The results of a test prompt "A cartoon face with facial hair and orange hair" are shown below.
-
 
 ![UNet denoising](images/example.png)
 
