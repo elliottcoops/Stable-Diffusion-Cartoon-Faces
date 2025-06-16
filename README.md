@@ -1,4 +1,4 @@
-# Stable-Diffusion-Penguins
+# Stable-Diffusion-Cartoon-Faces
 
 ## About
 
