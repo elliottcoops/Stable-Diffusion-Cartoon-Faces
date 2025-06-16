@@ -2,7 +2,7 @@
 
 ## About
 
-This repository contains a Stable Diffusion model to generate synthetic images of cartoon faces from a given prompt, trained using Skiittoo/cartoon-faces from Hugging Face.
+This repository contains a Stable Diffusion model trained on Skiittoo’s cartoon-faces dataset (from Hugging Face) to generate synthetic cartoon face images from text prompts.
 
 ![Generated results](images/generated_examples.png)
 
