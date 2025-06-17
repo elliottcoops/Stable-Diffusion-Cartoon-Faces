@@ -6,17 +6,33 @@ import matplotlib.pyplot as plt
 import os
 
 def linear_beta_schedule(timesteps, beta_start=0.0001, beta_end=0.02):
-    """
-    Linear schedule for betas.
+    """schedule to increase beta values evenly from start to end over timesteps
+
+    Args:
+        timesteps (int): total timesteps in sd
+        beta_start (float, optional): start of beta. Defaults to 0.0001.
+        beta_end (float, optional): end of beta. Defaults to 0.02.
+
+    Returns:
+        tensor: linear beta schedule in torch
     """
     return torch.linspace(beta_start, beta_end, timesteps)
 
 def forward_diffusion_process(x0, t, beta_schedule):
+    """adds schedule gaussian noise to x0 at timestep t following the diffusion process
+
+    Args:
+        x0 (tensor): training samples
+        t (int): current timestep
+        beta_schedule (tensor): linear beta schedule
+
+    Returns:
+        tuple: noisy image with a random noisy image
+    """
     beta = beta_schedule.to(x0.device)
     alpha = 1 - beta
     alpha_cumprod = torch.cumprod(alpha, dim=0)
 
-    # Debug prints
     a_cumprod_t = alpha_cumprod[t].view(-1, 1, 1, 1)
     a_cumprod_t = torch.clamp(a_cumprod_t, min=1e-8, max=1.0)
     a_sqrts = torch.sqrt(a_cumprod_t)
@@ -46,7 +62,7 @@ def generate_image_from_text(prompt, model, vae, clip_model, clip_processor,
     alpha_cumprod = torch.cumprod(alpha, dim=0)
     alpha_cumprod_prev = torch.cat([torch.ones((1,), device=device), alpha_cumprod[:-1]], dim=0)
 
-    # Process the prompt into text embeddings once
+    # process the prompt into text embeddings once
     inputs = clip_processor(text=[prompt], return_tensors="pt", padding=True, truncation=True)
     inputs = {k: v.to(device) for k, v in inputs.items()}
     
@@ -54,7 +70,7 @@ def generate_image_from_text(prompt, model, vae, clip_model, clip_processor,
         text_outputs = clip_model.text_model(**inputs)
         text_features = text_outputs.pooler_output  # shape: (1, hidden_dim)
     
-    # Start from pure noise at the last timestep
+    # start from pure noise at the last timestep
     x_t = torch.randn((batch_size, latent_channels, height, width), device=device)
 
     imgs = {}
@@ -62,7 +78,7 @@ def generate_image_from_text(prompt, model, vae, clip_model, clip_processor,
     for t in reversed(range(timesteps)):
         t_tensor = torch.full((batch_size,), t, device=device, dtype=torch.long)
 
-        # Predict noise at current timestep using the model (UNet), conditioning on text embeddings
+        # predict noise at current timestep using the model (UNet), conditioning on text embeddings
         noise_pred = model(x_t, t_tensor, text=text_features)
 
         alpha_t = alpha[t]
@@ -81,13 +97,13 @@ def generate_image_from_text(prompt, model, vae, clip_model, clip_processor,
         else:
             x_t = mean
 
-        # Save reconstructed images at the requested timesteps
+        # save reconstructed images at the requested timesteps
         if t in view_steps:
             with torch.no_grad():
                 reconstructed = vae.decoder(x_t).clamp(0, 1).cpu()[0].permute(1, 2, 0).numpy()
             imgs[t] = reconstructed
 
-    # Plot snapshots
+    # plot 
     num_steps = len(view_steps)
     fig, axs = plt.subplots(1, num_steps, figsize=(5 * num_steps, 5))
     if num_steps == 1:
@@ -100,9 +116,6 @@ def generate_image_from_text(prompt, model, vae, clip_model, clip_processor,
 
     plt.tight_layout()
     plt.show()
-
-import torch
-import matplotlib.pyplot as plt
 
 @torch.no_grad()
 def generate_4_images_from_prompts(model, vae, clip_model, clip_processor,
@@ -125,7 +138,7 @@ def generate_4_images_from_prompts(model, vae, clip_model, clip_processor,
     ]
     batch_size = len(prompts)
 
-    # Encode all prompts at once (batch)
+    # encode all prompts at once (batch)
     inputs = clip_processor(text=prompts, return_tensors="pt", padding=True, truncation=True)
     inputs = {k: v.to(device) for k, v in inputs.items()}
 
@@ -133,7 +146,7 @@ def generate_4_images_from_prompts(model, vae, clip_model, clip_processor,
         text_outputs = clip_model.text_model(**inputs)
         text_features = text_outputs.pooler_output  # shape: (batch_size, hidden_dim)
 
-    # Start from pure noise for all batch
+    # start from pure noise for all batch
     x_t = torch.randn((batch_size, latent_channels, height, width), device=device)
 
     for t in reversed(range(timesteps)):
@@ -156,10 +169,10 @@ def generate_4_images_from_prompts(model, vae, clip_model, clip_processor,
         else:
             x_t = mean
 
-    # Decode final latent to images
+    # decode final latent to images
     decoded_images = vae.decoder(x_t).clamp(0, 1).cpu()  # shape: (batch_size, C, H, W)
 
-    # Plot images with their prompts as titles
+    # plot
     fig, axs = plt.subplots(1, batch_size, figsize=(4 * batch_size, 4))
     if batch_size == 1:
         axs = [axs]
@@ -170,23 +183,27 @@ def generate_4_images_from_prompts(model, vae, clip_model, clip_processor,
     plt.tight_layout()
     plt.show()
 
-
-
+# setup device, gpu if have one else cpu
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
+# unet 
 unet = UNetWithTimeEmbedding(latent_channels=4)
 unet.to(device)
 unet.load_state_dict(torch.load(os.path.join("models", "unet_cond.pth"), map_location=device))
 unet.eval()
 
+# vae
 vae = SpatialVAE()
 vae.to(device)
 vae.load_state_dict(torch.load(os.path.join("models", "vae.pth"), map_location=device))
 vae.eval()
 
+# clip
 clip_model = CLIPModel.from_pretrained("openai/clip-vit-base-patch32")
 clip_processor = CLIPProcessor.from_pretrained("openai/clip-vit-base-patch32")
 clip_model.to(device)
 
+# define beta schedule
 beta_schedule = linear_beta_schedule(timesteps=1000)
 
 # inference
